@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>🪔 মাধবম পঞ্জিকা — vC5.9 (Drik↔Surya, Sunrise Core)</title>
+<title>🪔 মাধবম পঞ্জিকা — vC5.9.1 (Drik↔Surya, Sunrise Core, LST Fix)</title>
 <style>
 :root{
   --bg:#fff4e3; --panel:#fff1dd; --card:#fff8ee; --pink:#f6a9d6;
@@ -21,7 +21,7 @@ html,body{margin:0;background:var(--bg);font-family:"Noto Sans Bengali",system-u
 .toggle{display:inline-flex;gap:4px;align-items:center;background:var(--gold);color:var(--goldink);
   border:1px solid #d8c37a;border-radius:999px;padding:3px 8px;font-size:12px;font-weight:900;cursor:pointer}
 
-/* tight “airline” spacing */
+/* tight spacing */
 .pill{background:var(--pink);border-radius:10px;padding:8px;margin:5px 0}
 .label{color:var(--label);font-weight:900;font-size:14px;margin-bottom:1px}
 .value{font-weight:900;font-size:26px;line-height:1.15}
@@ -38,7 +38,6 @@ html,body{margin:0;background:var(--bg);font-family:"Noto Sans Bengali",system-u
 
 .footer{font-size:12px;text-align:center;margin-top:6px;opacity:.95}
 
-/* Tide block (kept minimal, vertical) */
 .tide{background:linear-gradient(180deg,#183a8a,#0b2257);color:#fff;border-radius:12px;padding:8px;margin:6px}
 .thead{font-weight:900;text-align:center;margin-bottom:4px}
 .tCol{display:flex;flex-direction:column;gap:4px}
@@ -56,12 +55,12 @@ html,body{margin:0;background:var(--bg);font-family:"Noto Sans Bengali",system-u
 </div>
 
 <script>
-/* ===== Persisted Mode (Drik/Surya) ===== */
+/* ===== Mode ===== */
 const MODE_KEY="madhabam_panchika_mode";
 let MODE = localStorage.getItem(MODE_KEY) || "drik";
 const setMode = m => { MODE=m; localStorage.setItem(MODE_KEY,m); };
 
-/* ===== Math & Astro helpers ===== */
+/* ===== Math & Astro ===== */
 const D2R=Math.PI/180, R2D=180/Math.PI, norm=x=>((x%360)+360)%360;
 function fmt12(h){ if(h==null||isNaN(h)) return "—"; h=(h+24)%24; const ap=h>=12?"PM":"AM";
   let hh=Math.floor(h%12); if(hh===0) hh=12; const mm=String(Math.round((h%1)*60)).padStart(2,"0");
@@ -77,7 +76,6 @@ function moonLong(J){ const d=J-2451545;
   return norm(Lm + 6.289*Math.sin(Mm*D2R) + 1.274*Math.sin((2*D-Mm)*D2R) + 0.658*Math.sin(2*D*D2R) - 0.186*Math.sin(Ms*D2R));
 }
 function drikCorrectedLongitudes(J){
-  // lightweight correction (keyless) — improves moon & sun by small seasonal terms
   const d=J-2451545;
   const sun = sunLong(J) + 0.25*Math.sin((2*Math.PI/365.2425)*d);
   const moon = moonLong(J) + 0.8*Math.sin((2*Math.PI/27.55454988)*d);
@@ -85,62 +83,57 @@ function drikCorrectedLongitudes(J){
 }
 function eclToEq(l,J){ const eps=obliq((J-2451545)/36525)*D2R, L=l*D2R;
   return {ra:norm(Math.atan2(Math.sin(L)*Math.cos(eps),Math.cos(L))*R2D)/15, dec:Math.asin(Math.sin(eps)*Math.sin(L))*R2D}; }
-function lstDeg(J,lon,tz){ return (gmst(J)/15 + tz + lon/15)*15; }
-function altDeg(dec,ha,lat){ // degrees
+/* FIX: LST depends on UT and longitude only — NO tz here */
+function lstDeg(J,lon){ return (gmst(J) + lon) % 360; }
+function altDeg(dec,ha,lat){
   return Math.asin(Math.sin(lat*D2R)*Math.sin(dec*D2R)+Math.cos(lat*D2R)*Math.cos(dec*D2R)*Math.cos(ha*D2R))*R2D;
 }
 
-/* ===== Rise/Set (Sun: fast; Moon: robust bisection) ===== */
-function solarRiseSet(J0,lat,lon,tz){
-  // use simple scan then linear refine with apparent solar disk (-0.833°)
+/* ===== Rise/Set (UTC JD scan; tz only at output) ===== */
+function solarRiseSetUTC(J0,lat,lon){
   const h0=-0.833; let rise=null,setv=null;
-  for(let k=-14;k<14;k++){
-    const a=(J0+(k-0.5-tz)/24), b=(J0+(k+0.5-tz)/24);
+  for(let k=0;k<24;k++){ // step 1h UTC
+    const a=J0 + k/24, b=J0 + (k+1)/24;
     const La=eclToEq(sunLong(a),a), Lb=eclToEq(sunLong(b),b);
-    const Ha = ((lstDeg(a,lon,tz)/15 - La.ra)*15 + 540)%360 - 180;
-    const Hb = ((lstDeg(b,lon,tz)/15 - Lb.ra)*15 + 540)%360 - 180;
-    const Aa = altDeg(La.dec,Ha,lat) - h0, Ab = altDeg(Lb.dec,Hb,lat) - h0;
-    if(Aa<0 && Ab>0 && rise===null){ // rising
-      let lo=a, hi=b; for(let i=0;i<10;i++){ const mid=(lo+hi)/2;
-        const L=eclToEq(sunLong(mid),mid);
-        const H=((lstDeg(mid,lon,tz)/15 - L.ra)*15 + 540)%360 - 180;
-        const A=altDeg(L.dec,H,lat)-h0; if(A<0) lo=mid; else hi=mid; }
-      rise=(( ( ( (hi+lo)/2 ) - J0 )*24 ) + tz);
-    }
-    if(Aa>0 && Ab<0 && setv===null){ // setting
-      let lo=a, hi=b; for(let i=0;i<10;i++){ const mid=(lo+hi)/2;
-        const L=eclToEq(sunLong(mid),mid);
-        const H=((lstDeg(mid,lon,tz)/15 - L.ra)*15 + 540)%360 - 180;
-        const A=altDeg(L.dec,H,lat)-h0; if(A>0) lo=mid; else hi=mid; }
-      setv=(( ( ( (hi+lo)/2 ) - J0 )*24 ) + tz);
-    }
-  } return {rise,set:setv};
-}
-function lunarRiseSet(J0,lat,lon,tz){
-  // robust: scan 30-minute steps; refine with bisection; altitude threshold 0°
-  let rise=null,setv=null;
-  for(let k=-24;k<24;k++){
-    const a=J0+(k/48 - tz/24), b=J0+((k+1)/48 - tz/24);
-    const La=eclToEq(drikCorrectedLongitudes(a).moon,a);
-    const Lb=eclToEq(drikCorrectedLongitudes(b).moon,b);
-    const Ha=((lstDeg(a,lon,tz)/15 - La.ra)*15 + 540)%360 - 180;
-    const Hb=((lstDeg(b,lon,tz)/15 - Lb.ra)*15 + 540)%360 - 180;
-    const Aa=altDeg(La.dec,Ha,lat), Ab=altDeg(Lb.dec,Hb,lat);
+    const Ha=((lstDeg(a,lon)/15 - La.ra)*15 + 540)%360 - 180;
+    const Hb=((lstDeg(b,lon)/15 - Lb.ra)*15 + 540)%360 - 180;
+    const Aa=altDeg(La.dec,Ha,lat)-h0, Ab=altDeg(Lb.dec,Hb,lat)-h0;
     if(Aa<0 && Ab>0 && rise===null){
-      let lo=a, hi=b; for(let i=0;i<12;i++){ const mid=(lo+hi)/2;
-        const L=eclToEq(drikCorrectedLongitudes(mid).moon,mid);
-        const H=((lstDeg(mid,lon,tz)/15 - L.ra)*15 + 540)%360 - 180;
-        const A=altDeg(L.dec,H,lat); if(A<0) lo=mid; else hi=mid; }
-      rise=((( (hi+lo)/2 )-J0)*24 + tz);
+      let lo=a, hi=b; for(let i=0;i<16;i++){ const mid=(lo+hi)/2;
+        const L=eclToEq(sunLong(mid),mid), H=((lstDeg(mid,lon)/15 - L.ra)*15 + 540)%360 - 180;
+        const A=altDeg(L.dec,H,lat)-h0; if(A<0) lo=mid; else hi=mid; }
+      rise=( ( (lo+hi)/2 ) - J0 )*24; // hours UTC
     }
     if(Aa>0 && Ab<0 && setv===null){
-      let lo=a, hi=b; for(let i=0;i<12;i++){ const mid=(lo+hi)/2;
-        const L=eclToEq(drikCorrectedLongitudes(mid).moon,mid);
-        const H=((lstDeg(mid,lon,tz)/15 - L.ra)*15 + 540)%360 - 180;
-        const A=altDeg(L.dec,H,lat); if(A>0) lo=mid; else hi=mid; }
-      setv=((( (hi+lo)/2 )-J0)*24 + tz);
+      let lo=a, hi=b; for(let i=0;i<16;i++){ const mid=(lo+hi)/2;
+        const L=eclToEq(sunLong(mid),mid), H=((lstDeg(mid,lon)/15 - L.ra)*15 + 540)%360 - 180;
+        const A=altDeg(L.dec,H,lat)-h0; if(A>0) lo=mid; else hi=mid; }
+      setv=( ( (lo+hi)/2 ) - J0 )*24; // hours UTC
     }
-  } return {rise,set:setv};
+  } return {riseUTC:rise,setUTC:setv};
+}
+function lunarRiseSetUTC(J0,lat,lon){
+  let rise=null,setv=null;
+  for(let k=0;k<48;k++){ // 30-min UTC
+    const a=J0 + k/48, b=J0 + (k+1)/48;
+    const La=eclToEq(drikCorrectedLongitudes(a).moon,a);
+    const Lb=eclToEq(drikCorrectedLongitudes(b).moon,b);
+    const Ha=((lstDeg(a,lon)/15 - La.ra)*15 + 540)%360 - 180;
+    const Hb=((lstDeg(b,lon)/15 - Lb.ra)*15 + 540)%360 - 180;
+    const Aa=altDeg(La.dec,Ha,lat), Ab=altDeg(Lb.dec,Hb,lat);
+    if(Aa<0 && Ab>0 && rise===null){
+      let lo=a, hi=b; for(let i=0;i<16;i++){ const mid=(lo+hi)/2;
+        const L=eclToEq(drikCorrectedLongitudes(mid).moon,mid), H=((lstDeg(mid,lon)/15 - L.ra)*15 + 540)%360 - 180;
+        const A=altDeg(L.dec,H,lat); if(A<0) lo=mid; else hi=mid; }
+      rise=( ( (lo+hi)/2 ) - J0 )*24; // UTC hours
+    }
+    if(Aa>0 && Ab<0 && setv===null){
+      let lo=a, hi=b; for(let i=0;i<16;i++){ const mid=(lo+hi)/2;
+        const L=eclToEq(drikCorrectedLongitudes(mid).moon,mid), H=((lstDeg(mid,lon)/15 - L.ra)*15 + 540)%360 - 180;
+        const A=altDeg(L.dec,H,lat); if(A>0) lo=mid; else hi=mid; }
+      setv=( ( (lo+hi)/2 ) - J0 )*24; // UTC hours
+    }
+  } return {riseUTC:rise,setUTC:setv};
 }
 
 /* ===== Tithi / Nakshatra ===== */
@@ -205,41 +198,37 @@ function tideApprox(lon){ const h1=(5 + (lon/15))%24, h2=(h1+12.42)%24, l1=(h1+6
   const local=new Date(now.toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));
   const Y=local.getFullYear(), M=local.getMonth()+1, D=local.getDate();
 
-  const J0=JD(Y,M,D,0);
+  const J0UTC=JD(Y,M,D,0);              // UTC midnight JD
+  const sUTC = solarRiseSetUTC(J0UTC,lat,lon); // UTC hours
+  // sunrise hour in local clock:
+  const srLocalHour = (sUTC.riseUTC!=null)?(sUTC.riseUTC + tz):6;
 
-  // --- Sunrise-based day (from solar rise) ---
-  const sRS = solarRiseSet(J0,lat,lon,tz);
+  // sunrise-based day:
   const localHr = now.getHours()+now.getMinutes()/60;
-  const srHrLocal = (sRS.rise!=null) ? (sRS.rise) : 6; // local hours
-  const Jday = (localHr < srHrLocal) ? (J0-1) : J0;
+  const JdayUTC = (localHr < srLocalHour) ? (J0UTC - 1) : J0UTC;
 
-  // Evaluate 30 min after sunrise for day-valid tithi/nakshatra
-  const JEval = Jday + ((srHrLocal + 0.5) - tz)/24;
+  // evaluate 30m after sunrise (UTC):
+  const JEval = JdayUTC + ((srLocalHour - tz) + 0.5)/24;
 
-  // Drik/Surya engines
   const engine = (MODE==="drik") ? "drik" : "surya";
   const t = tithiInfo(JEval, engine);
   const n = nakInfo(JEval, engine);
 
-  // End-times (rough but robust)
   const tNext = tithiName((t.num%30)+1);
   const nNext = NAK[(n.idx+1)%27];
   const tEnd = fmt12(localHr + (12*(1 - t.rem))/(13.176358 - 0.98564736)*24);
   const nEnd = fmt12(localHr + ((13 + 20/60)*(1 - n.frac))/13.176358*24);
 
-  // Rise/Set for the *panchika day*
-  const sEvents = solarRiseSet(Jday,lat,lon,tz);
-  const mEvents = lunarRiseSet(Jday,lat,lon,tz);
+  // Rise/set for the *panchika day* (UTC → local hours)
+  const sEv = solarRiseSetUTC(JdayUTC,lat,lon);
+  const mEv = lunarRiseSetUTC(JdayUTC,lat,lon);
+  const sr = (sEv.riseUTC!=null)?fmt12(sEv.riseUTC + tz):"—";
+  const ss = (sEv.setUTC !=null)?fmt12(sEv.setUTC  + tz):"—";
+  const mr = (mEv.riseUTC!=null)?fmt12(mEv.riseUTC + tz):"—";
+  const ms = (mEv.setUTC !=null)?fmt12(mEv.setUTC  + tz):"—";
 
-  const sr = (sEvents.rise!=null)?fmt12(sEvents.rise):"—";
-  const ss = (sEvents.set !=null)?fmt12(sEvents.set ):"—";
-  const mr = (mEvents.rise!=null)?fmt12(mEvents.rise):"—";
-  const ms = (mEvents.set !=null)?fmt12(mEvents.set ):"—";
-
-  // Bangabda from sunrise
   const bang = bangabdaFromSun(JEval, local);
   const tide = tideApprox(lon);
-
   const modeLabel = (MODE==="drik")? "ক্যালেন্ডার: দৃক (Govt-style)" : "ক্যালেন্ডার: সূর্যসিদ্ধান্ত (Calc)";
 
   document.getElementById("root").innerHTML = `
@@ -288,11 +277,9 @@ function tideApprox(lon){ const h1=(5 + (lon/15))%24, h2=(h1+12.42)%24, l1=(h1+6
   </section>
   `;
 
-  // live local time (zone shown)
   const tzFmt=new Intl.DateTimeFormat('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true,timeZoneName:'short'});
   document.getElementById('lt').textContent="⏰ Local Time — "+tzFmt.format(local);
 
-  // toggle
   document.getElementById('tg').onclick=()=>{ setMode(MODE==="drik"?"surya":"drik"); location.reload(); };
 })();
 </script>
