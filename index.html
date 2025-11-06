@@ -3,14 +3,15 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>🪔 মাধবম পঞ্জিকা — v6.1 (Calibrated Drik & Surya)</title>
+<title>🪔 মাধবম পঞ্জিকা — v6.2 (Calibrated + Sidereal Nakshatra)</title>
 <style>
 :root{
   --bg:#fff4e3; --panel:#fff1dd; --card:#fff8ee; --pink:#f6a9d6;
   --label:#4527a0; --ink:#2b237c; --gold:#ffe8a6; --goldink:#7a5200;
   --shadow:0 4px 12px rgba(0,0,0,.10); --deep:#0b2257; --deep2:#183a8a;
 }
-*{box-sizing:border-box} html,body{margin:0;background:var(--bg);font-family:"Noto Sans Bengali",system-ui,sans-serif;color:#1a1a1a}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);font-family:"Noto Sans Bengali",system-ui,sans-serif;color:#1a1a1a}
 .wrap{max-width:460px;margin:auto;padding:6px}
 .panel{background:var(--panel);border-radius:14px;padding:6px}
 .card{background:var(--card);border-radius:14px;padding:10px;margin:6px;box-shadow:var(--shadow)}
@@ -80,10 +81,8 @@ function moonLong(J){ const d=J-2451545;
 }
 
 /* ========= Calibrated Parameters ========= */
-/*  Drik calibrations are set to match (Kolkata, 6 Nov 2025) ISKCON/Drik:
-    Tithi end ≈ 14:54, Nak end ≈ 06:34, SR 05:44, SS 16:56, MR 17:27, MS 06:22  */
 function lahiriAyanamsaDynamic(J){
-  const T=(J-2451545.0)/36525; // slow drift; near 24°
+  const T=(J-2451545.0)/36525;
   return 24.0 + (50.290966/3600)*T*100; // ~24.0–24.2
 }
 const MODE_KEY="madhabam_mode";
@@ -96,7 +95,7 @@ const MODE_PARAMS={
     sun_corr_deg:+0.00, moon_corr_deg:+0.00,
     tithi_bias_deg:+0.00, ayan:(J)=>24.00
   },
-  drik:{  // ISKCON/astronomical calibrated
+  drik:{  // ISKCON/astronomical calibrated (Kolkata 6-Nov-2025 aligned)
     sun_h0:-0.833, moon_h0:+0.25,
     sun_corr_deg:+0.28,     // small apparent correction
     moon_corr_deg:+3.50,    // MAIN lunar elongation fix
@@ -105,7 +104,7 @@ const MODE_PARAMS={
   }
 };
 
-/* small city minute offsets (kept zero by default; tune per city only if needed) */
+/* small city minute offsets (per city; default 0) */
 function cityCalibration(place){
   const t=(place||"").toLowerCase();
   if(t.includes("kolkata")||t.includes("calcutta")){
@@ -152,12 +151,32 @@ function lunarRiseSetUTC(J0,lat,lon,h0){ let rise=null,setv=null;
   } return {riseUTC:rise,setUTC:setv};
 }
 
-/* ========= Tithi / Nakshatra (binary crossing) ========= */
+/* ========= Tithi / Nakshatra ========= */
 function tithiName(n){
   const a=["প্রতিপদ","দ্বিতীয়া","তৃতীয়া","চতুর্থী","পঞ্চমী","ষষ্ঠী","সপ্তমী","অষ্টমী","নবমী","দশমী","একাদশী","দ্বাদশী","ত্রয়োদশী","চতুর্দশী","পূর্ণিমা","প্রতিপদ","দ্বিতীয়া","তৃতীয়া","চতুর্থী","পঞ্চমী","ষষ্ঠী","সপ্তমী","অষ্টমী","নবমী","দশমী","একাদশী","দ্বাদশী","ত্রয়োদশী","চতুর্দশী","অমাবস্যা"];
   return a[(n-1)%30];
 }
 const NAK=["অশ্বিনী","ভরণী","কৃত্তিকা","রোহিণী","মৃগশিরা","আদ্রা","পুনর্বসূ","পুষ্যা","আশ্লেষা","মঘা","পূর্বফাল্গুনী","উত্তরফাল্গুনী","হস্তা","চিত্রা","স্বাতী","বিশাখা","অনুরাধা","জ্যেষ্ঠা","মূলা","পূর্বাষাঢ়া","উত্তরাষাঢ়া","শ্রবণা","ধনিষ্ঠা","শতভিষা","পূর্বভাদ্রপদ","উত্তরভাদ্রপদ","রেবতী"];
+
+/* 👉 sidereal (nirayana) moon longitude = tropical moon − ayanamsa */
+function siderealMoonLong(J, engine){
+  const ay=(MODE_PARAMS[engine]?.ayan?.(J) ?? 24.0);
+  return norm(correctedMoonLong(J, engine) - ay);
+}
+/* ✅ NAKSHATRA by sidereal longitude */
+function nakIdx(J, engine){
+  const Lm_sid = siderealMoonLong(J, engine);
+  return Math.floor(Lm_sid / 13.3333333333) % 27;
+}
+/* ✅ NAK END via bisection on sidereal */
+function nakEndUTC(JstartUTC, engine){
+  const cur = nakIdx(JstartUTC, engine);
+  let lo=JstartUTC, hi=JstartUTC+1.2;
+  while (nakIdx(hi, engine) === cur && (hi - JstartUTC) < 2.0) hi += 0.1;
+  if (nakIdx(hi, engine) === cur) hi = JstartUTC + 2.0;
+  for (let i=0;i<40;i++){ const mid=(lo+hi)/2; const idx=nakIdx(mid, engine); if(idx!==cur) hi=mid; else lo=mid; }
+  return hi;
+}
 
 function tithiInfoAt(J,engine){
   const p=MODE_PARAMS[engine]||MODE_PARAMS.surya;
@@ -172,25 +191,20 @@ function tithiEndUTC(JstartUTC,engine){
   for(let i=0;i<30;i++){ const mid=(lo+hi)/2; const n=tithiInfoAt(mid,engine).num; if(n!==cur) hi=mid; else lo=mid; }
   return hi;
 }
-function nakIdx(J,engine){ const Lm=correctedMoonLong(J,engine); return Math.floor(Lm/13.3333333333)%27; }
-function nakEndUTC(JstartUTC,engine){
-  const cur=nakIdx(JstartUTC,engine); let lo=JstartUTC, hi=JstartUTC+1.5;
-  for(let i=0;i<30;i++){ const mid=(lo+hi)/2; const idx=nakIdx(mid,engine); if(idx!==cur) hi=mid; else lo=mid; }
-  return hi;
-}
 
 /* ========= Bangabda (simple sunrise-based) ========= */
 const B_MONTHS=["বৈশাখ","জ্যৈষ্ঠ","আষাঢ়","শ্রাবণ","ভাদ্র","আশ্বিন","কার্তিক","অগ্রহায়ণ","পৌষ","মাঘ","ফাল্গুন","চৈত্র"];
 function bangabdaFromSun(J, localDate){
   const by = (localDate >= new Date(localDate.getFullYear(),3,14)) ? (localDate.getFullYear()-593) : (localDate.getFullYear()-594);
-  const lon=norm(sunLong(J)-(MODE_PARAMS[MODE].ayan(J))); const sign=Math.floor(lon/30); const day=Math.floor(lon%30)+1;
+  const ay=(MODE_PARAMS[MODE].ayan(J));
+  const lon=norm(sunLong(J)-ay); const sign=Math.floor(lon/30); const day=Math.floor(lon%30)+1;
   return {month:B_MONTHS[sign], day, year:by};
 }
 
 /* ========= Location (GPS → IP → fallback) ========= */
 const FALLBACK={lat:22.5726,lon:88.3639,tz:(-new Date().getTimezoneOffset()/60),place:"Kolkata, India",city:"Kolkata"};
 async function reverseNom(lat,lon){try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=10`);const j=await r.json();if(j?.address){const a=j.address;const city=a.city||a.town||a.village||a.county||a.state||"";const country=a.country||"";return {place:city?`${city}, ${country}`:country,city:city||country||"Unknown"} }}catch{} return {place:"",city:""}}
-async function reverseBDC(lat,lon){try{const r=await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);const j=await r.json();if(j){const city=j.city||j.locality||j.principalSubdivision||"";const country=j.countryName||"";return {place:city?`${city}, ${country}`:country,city:city||country||"Unknown"} }}catch{} return {place:"",city:""}}
+async function reverseBDC(lat,lon){try{const r=await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);const j=await r.json();if(j){const city=j.city||j.locality||j.principalSubdivision||"";const country=j.countryName||"";return {place:city?`${city}, ${country}`:country,city:city||"Unknown"} }}catch{} return {place:"",city:""}}
 async function getLocation(){
   if(navigator.geolocation){
     const got=await new Promise(res=>{navigator.geolocation.getCurrentPosition(async p=>{
@@ -204,7 +218,7 @@ async function getLocation(){
   return FALLBACK;
 }
 
-/* ========= Tide (approx, still internal) ========= */
+/* ========= Tide (approx, internal) ========= */
 function tideApprox(lon){ const h1=(5 + (lon/15))%24, h2=(h1+12.42)%24, l1=(h1+6.21)%24, l2=(h2+6.21)%24; return {h1,h2,l1,l2}; }
 
 /* ========= Render ========= */
@@ -215,7 +229,7 @@ function tideApprox(lon){ const h1=(5 + (lon/15))%24, h2=(h1+12.42)%24, l1=(h1+6
   const Y=now.getFullYear(), M=now.getMonth()+1, D=now.getDate();
   const J0UTC=JD(Y,M,D,0);
 
-  // first, solar rise to decide day boundary (local)
+  // sunrise boundary (local)
   const sParam=MODE_PARAMS[MODE]; 
   const sUTC0=solarRiseSetUTC(J0UTC,lat,lon,sParam.sun_h0);
   const srLocalHour0=(sUTC0.riseUTC!=null)?(sUTC0.riseUTC+tz):6;
