@@ -1,180 +1,252 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>🪔 মাধবম পঞ্জিকা — vC5.8 (Drik↔Surya Toggle)</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>🪔 মাধবম পঞ্জিকা — vC5.9 (Drik↔Surya, Sunrise Core)</title>
 <style>
 :root{
-  --bg:#fff4e3;--card:#fff8ee;--pink:#f6a9d6;--label:#4527a0;--shadow:0 6px 16px rgba(0,0,0,.12);
-  --ink:#2b237c;--hi1:#e65100;--hi2:#1565c0;--blue1:#0b2257;--blue2:#183a8a;--gold:#ffe8a6;--goldink:#7a5200;
+  --bg:#fff4e3; --panel:#fff1dd; --card:#fff8ee; --pink:#f6a9d6;
+  --label:#4527a0; --ink:#2b237c; --gold:#ffe8a6; --goldink:#7a5200;
+  --shadow:0 4px 12px rgba(0,0,0,.10);
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);font-family:"Noto Sans Bengali","Noto Serif Bengali",system-ui,sans-serif;color:#1a1a1a}
-.wrap{max-width:460px;margin:auto;padding:8px}
-
-/* tight (airline) */
-.card{background:var(--card);border-radius:16px;padding:12px;margin:6px;box-shadow:var(--shadow)}
-.title{display:flex;justify-content:space-between;align-items:center;font-weight:900;font-size:22px;margin-bottom:4px}
-.line{font-size:13px;opacity:.92;text-align:center;margin:3px 0}
+html,body{margin:0;background:var(--bg);font-family:"Noto Sans Bengali",system-ui,sans-serif;color:#1a1a1a}
+.wrap{max-width:460px;margin:auto;padding:6px}
+.panel{background:var(--panel);border-radius:14px;padding:6px}
+.card{background:var(--card);border-radius:14px;padding:10px;margin:6px;box-shadow:var(--shadow)}
+.title{display:flex;justify-content:space-between;align-items:center;font-weight:900;font-size:20px;margin-bottom:2px}
+.line{font-size:13px;text-align:center;margin:2px 0;opacity:.92}
 .line.bold{font-weight:700;color:#5a3d00}
+.toggle{display:inline-flex;gap:4px;align-items:center;background:var(--gold);color:var(--goldink);
+  border:1px solid #d8c37a;border-radius:999px;padding:3px 8px;font-size:12px;font-weight:900;cursor:pointer}
 
-/* toggle pill */
-.toggle{display:inline-flex;align-items:center;gap:4px;background:var(--gold);color:var(--goldink);border-radius:999px;padding:4px 8px;font-size:12px;font-weight:900;cursor:pointer;border:1px solid #d9c178}
-.toggle small{font-weight:700;opacity:.9}
+/* tight “airline” spacing */
+.pill{background:var(--pink);border-radius:10px;padding:8px;margin:5px 0}
+.label{color:var(--label);font-weight:900;font-size:14px;margin-bottom:1px}
+.value{font-weight:900;font-size:26px;line-height:1.15}
+.sub{font-size:13px;margin-top:4px}
+.sub b{font-weight:900}
+.paksha{display:block;width:max-content;margin:0 auto 4px auto;background:var(--gold);color:var(--goldink);
+  border-radius:999px;padding:3px 10px;font-weight:900}
 
-/* blocks */
-.pill{background:var(--pink);border-radius:12px;padding:10px;margin:6px 0}
-.label{color:var(--label);font-weight:900;font-size:15px}
-.value{font-weight:900;font-size:28px;line-height:1.25;margin-top:2px}
-.sub{font-size:14px;margin-top:5px}.sub b{font-weight:900}
-.paksha{display:block;text-align:center;font-weight:900;font-size:18px;margin:2px auto 4px;color:var(--goldink);background:var(--gold);border-radius:999px;padding:4px 10px;width:fit-content}
-.nextTag{font-weight:900}.nextTithi{color:var(--hi1)}.nextNak{color:var(--hi2)}
+.timeCol{display:flex;flex-direction:column;gap:4px;margin-top:4px}
+.timeItem{background:var(--pink);border-radius:10px;padding:7px}
+.timeLab{color:var(--label);font-weight:900;font-size:14px;margin-bottom:1px}
+.timeVal{font-weight:900;font-size:24px;line-height:1.1}
+.timeVal .ampm{font-size:20px;margin-left:2px}
 
-.timeCol{display:flex;flex-direction:column;gap:4px;margin-top:6px}
-.timeItem{background:var(--pink);border-radius:12px;padding:8px}
-.timeLab{color:var(--label);font-weight:900;font-size:15px;margin-bottom:2px}
-.timeVal{font-weight:900;font-size:26px;line-height:1.2}
-.timeVal .ampm{font-size:22px;margin-left:2px}
+.footer{font-size:12px;text-align:center;margin-top:6px;opacity:.95}
 
-.footer{font-size:13px;text-align:center;margin-top:8px;opacity:.92}
-
-.tide{background:linear-gradient(180deg,var(--blue2),var(--blue1));color:#fff;border-radius:14px;padding:10px;margin:6px}
+/* Tide block (kept minimal, vertical) */
+.tide{background:linear-gradient(180deg,#183a8a,#0b2257);color:#fff;border-radius:12px;padding:8px;margin:6px}
 .thead{font-weight:900;text-align:center;margin-bottom:4px}
 .tCol{display:flex;flex-direction:column;gap:4px}
-.tc{background:rgba(255,255,255,.1);padding:8px;border-radius:10px}
-.tLab{font-weight:800;margin-bottom:2px}
-.tVal{font-weight:900;font-size:20px}
-.tVal .ampm{font-size:18px}
+.tc{background:rgba(255,255,255,.11);padding:7px;border-radius:10px}
+.tLab{font-weight:800;margin-bottom:1px}
+.tVal{font-weight:900;font-size:18px}
+.tVal .ampm{font-size:16px}
 </style>
 </head>
 <body>
-<div class="wrap" id="root">
-  <div style="text-align:center;margin-top:36px;font-weight:700">📍 অবস্থান নির্ধারণ করা হচ্ছে...</div>
+<div class="wrap">
+  <div class="panel" id="root">
+    <div style="text-align:center;padding:20px 0;font-weight:700">📍 অবস্থান নির্ধারণ করা হচ্ছে...</div>
+  </div>
 </div>
 
 <script>
-/* ================= Mode (persist in localStorage) ================ */
+/* ===== Persisted Mode (Drik/Surya) ===== */
 const MODE_KEY="madhabam_panchika_mode";
-let MODE = localStorage.getItem(MODE_KEY) || (location.hash.match(/mode=([a-z]+)/)||[])[1] || "drik";
-function setMode(m){ MODE=m; localStorage.setItem(MODE_KEY,m); }
+let MODE = localStorage.getItem(MODE_KEY) || "drik";
+const setMode = m => { MODE=m; localStorage.setItem(MODE_KEY,m); };
 
-/* ================= Utilities ================= */
-const D2R=Math.PI/180,R2D=180/Math.PI, norm=x=>((x%360)+360)%360;
-function fmt12(h){ if(h==null||isNaN(h)) return "—"; h=(h+24)%24; const ap=h>=12?"PM":"AM"; let hh=Math.floor(h%12); if(hh===0) hh=12; const mm=String(Math.round((h%1)*60)).padStart(2,"0"); return `${hh}:${mm} <span class="ampm">${ap}</span>`; }
-function JD(y,m,d,ut=0){ if(m<=2){y--;m+=12;} const A=Math.floor(y/100),B=2-A+Math.floor(A/4); return Math.floor(365.25*(y+4716))+Math.floor(30.6001*(m+1))+d+B-1524.5+ut/24; }
-function obliq(T){ return 23.439291-0.0130042*T; }
+/* ===== Math & Astro helpers ===== */
+const D2R=Math.PI/180, R2D=180/Math.PI, norm=x=>((x%360)+360)%360;
+function fmt12(h){ if(h==null||isNaN(h)) return "—"; h=(h+24)%24; const ap=h>=12?"PM":"AM";
+  let hh=Math.floor(h%12); if(hh===0) hh=12; const mm=String(Math.round((h%1)*60)).padStart(2,"0");
+  return `${hh}:${mm} <span class="ampm">${ap}</span>`; }
+function JD(y,m,d,ut=0){ if(m<=2){y--;m+=12;} const A=Math.floor(y/100),B=2-A+Math.floor(A/4);
+  return Math.floor(365.25*(y+4716))+Math.floor(30.6001*(m+1))+d+B-1524.5+ut/24; }
 function gmst(J){ const T=(J-2451545)/36525; return norm(280.46061837+360.98564736629*(J-2451545)+0.000387933*T*T - T*T*T/38710000); }
-function sunLong(J){ const d=J-2451545; const M=norm(357.52911+0.98560028*d); return norm(280.46646+0.98564736*d + 1.9146*Math.sin(M*D2R)+0.02*Math.sin(2*M*D2R)); }
-function moonLong(J){ const d=J-2451545; const Lm=norm(218.3165+13.176358*d), D=norm(297.8501921+12.19074912*d), Ms=norm(357.5291092+0.98560028*d), Mm=norm(134.9633964+13.06499295*d); return norm(Lm + 6.289*Math.sin(Mm*D2R) + 1.274*Math.sin((2*D-Mm)*D2R) + 0.658*Math.sin(2*D*D2R) - 0.186*Math.sin(Ms*D2R)); }
-function eclToEq(l,J){ const eps=obliq((J-2451545)/36525)*D2R, L=l*D2R; return {ra:norm(Math.atan2(Math.sin(L)*Math.cos(eps),Math.cos(L))*R2D)/15, dec:Math.asin(Math.sin(eps)*Math.sin(L))*R2D}; }
-function hourAngle(J,ra,lat,lon,tz){ const lst=(gmst(J)/15 + tz + lon/15); let H=(lst-ra)*15; return ((H+540)%360)-180; }
-function altitude(dec,H,lat){ return Math.asin(Math.sin(lat*D2R)*Math.sin(dec*D2R)+Math.cos(lat*D2R)*Math.cos(dec*D2R)*Math.cos(H*D2R))*R2D; }
-function riseSet(body,J0,lat,lon,tz){ let rise=null,setv=null; for(let h=-14;h<14;h++){ const J1=J0+(h-0.5-tz)/24, J2=J0+(h+0.5-tz)/24; const L1=(body==="sun")?sunLong(J1):moonLong(J1), L2=(body==="sun")?sunLong(J2):moonLong(J2); const q1=eclToEq(L1,J1), q2=eclToEq(L2,J2); const a1=altitude(q1.dec, hourAngle(J1,q1.ra,lat,lon,tz), lat); const a2=altitude(q2.dec, hourAngle(J2,q2.ra,lat,lon,tz), lat); if(a1<0&&a2>0&&rise===null){const t=-a1/(a2-a1); rise=(h-0.5)+t;} if(a1>0&&a2<0&&setv===null){const t= a1/(a1-a2); setv=(h-0.5)+t;} } return {rise,set:setv}; }
-
-/* ================= Panchika core ================= */
-function tithiName(n){ const a=["প্রতিপদ","দ্বিতীয়া","তৃতীয়া","চতুর্থী","পঞ্চমী","ষষ্ঠী","সপ্তমী","অষ্টমী","নবমী","দশমী","একাদশী","দ্বাদশী","ত্রয়োদশী","চতুর্দশী","পূর্ণিমা","প্রতিপদ","দ্বিতীয়া","তৃতীয়া","চতুর্থী","পঞ্চমী","ষষ্ঠী","সপ্তমী","অষ্টমী","নবমী","দশমী","একাদশী","দ্বাদশী","ত্রয়োদশী","চতুর্দশী","অমাবস্যা"]; return a[(n-1)%30]; }
-const NAK=["অশ্বিনী","ভরণী","কৃত্তিকা","রোহিণী","মৃগশিরা","আদ্রা","পুনর্বসূ","পুষ্যা","আশ্লেষা","মঘা","পূর্বফাল্গুনী","উত্তরফাল্গুনী","হস্তা","চিত্রা","স্বাতী","বিশাখা","অনুরাধা","জ্যেষ্ঠা","মূলা","পূর্বাষাঢ়া","উত্তরাষাঢ়া","শ্রবণা","ধনিষ্ঠা","শতভিষা","পূর্বভাদ্রপদ","উত্তরভাদ্রপদ","রেবতী"];
-const LORD={"অশ্বিনী":"কেতু (Ketu)","ভরণী":"শুক্র (Venus)","কৃত্তিকা":"সূর্য (Sun)","রোহিণী":"চন্দ্র (Moon)","মৃগশিরা":"মঙ্গল (Mars)","আদ্রা":"রাহু (Rahu)","পুনর্বসূ":"বৃহস্পতি (Jupiter)","পুষ্যা":"শনি (Saturn)","আশ্লেষা":"বুধ (Mercury)","মঘা":"কেতু (Ketu)","পূর্বফাল্গুনী":"শুক্র (Venus)","উত্তরফাল্গুনী":"সূর্য (Sun)","হস্তা":"চন্দ্র (Moon)","চিত্রা":"মঙ্গল (Mars)","স্বাতী":"রাহু (Rahu)","বিশাখা":"বৃহস্পতি (Jupiter)","অনুরাধা":"শনি (Saturn)","জ্যেষ্ঠা":"বুধ (Mercury)","মূলা":"কেতু (Ketu)","পূর্বাষাঢ়া":"শুক্র (Venus)","উত্তরাষাঢ়া":"সূর্য (Sun)","শ্রবণা":"চন্দ্র (Moon)","ধনিষ্ঠা":"মঙ্গল (Mars)","শতভিষা":"রাহু (Rahu)","পূর্বভাদ্রপদ":"বৃহস্পতি (Jupiter)","উত্তরভাদ্রপদ":"শনি (Saturn)","রেবতী":"বুধ"};
-
-/* Surya calc */
-function tithiInfo(J){ const ls=sunLong(J), lm=moonLong(J); const diff=norm(lm-ls); const num=Math.floor(diff/12)+1; const rem=(diff%12)/12; const paksha=(num<=15)?"শুক্লপক্ষ":"কৃষ্ণপক্ষ"; return {num,rem,paksha}; }
-function nakInfo(J){ const lm=moonLong(J), step=(13+20/60); const idx=Math.floor(lm/step); const frac=(lm%step)/step; return {idx,frac,name:NAK[idx]}; }
-
-/* Simple Bangabda (sunrise-based) */
-function lahiriAyanamsa(J){ return 24.0; }
-const B_MONTHS=["বৈশাখ","জ্যৈষ্ঠ","আষাঢ়","শ্রাবণ","ভাদ্র","আশ্বিন","কার্তিক","অগ্রহায়ণ","পৌষ","মাঘ","ফাল্গুন","চৈত্র"];
-function bangabdaFromSun(J, localDate){ const ay=lahiriAyanamsa(J); const lon=norm(sunLong(J)-ay); const sign=Math.floor(lon/30); const dayInMonth=Math.floor(lon%30)+1; const poila=new Date(localDate.getFullYear(),3,14); const byear=(localDate>=poila)?(localDate.getFullYear()-593):(localDate.getFullYear()-594); return {month:B_MONTHS[sign], day:dayInMonth, year:byear}; }
-
-/* ================= Location (GPS → IP → BDC → fallback) ================= */
-const FALLBACK={lat:22.5726,lon:88.3639,tz:(-new Date().getTimezoneOffset()/60),place:"Kolkata, India",city:"Kolkata"};
-async function reverseNom(lat,lon){try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=10`);const j=await r.json();if(j?.address){const a=j.address, city=a.city||a.town||a.village||a.county||a.state||""; const country=a.country||""; return {place:city?`${city}, ${country}`:country, city:city||country||"Unknown"} }}catch{} return {place:"",city:""}}
-async function reverseBDC(lat,lon){try{const r=await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);const j=await r.json(); if(j){const city=j.city||j.locality||j.principalSubdivision||""; const country=j.countryName||""; return {place:city?`${city}, ${country}`:country, city:city||country||"Unknown"} }}catch{} return {place:"",city:""}}
-async function getLocation(){
-  if(navigator.geolocation){
-    const got=await new Promise(res=>{navigator.geolocation.getCurrentPosition(async p=>{const lat=p.coords.latitude,lon=p.coords.longitude;let geo=await reverseNom(lat,lon); if(!geo.place) geo=await reverseBDC(lat,lon); res({lat,lon,tz:(-new Date().getTimezoneOffset()/60),place:geo.place||"GPS",city:geo.city||"GPS"});},()=>res(null),{timeout:6000})});
-    if(got) return got;
-  }
-  try{const r=await fetch("https://ipapi.co/json/");const j=await r.json(); if(j?.latitude){let geo=await reverseNom(j.latitude,j.longitude); if(!geo.place) geo=await reverseBDC(j.latitude,j.longitude); return {lat:j.latitude,lon:j.longitude,tz:(-new Date().getTimezoneOffset()/60),place:geo.place||(j.city?`${j.city}, ${j.country_name}`:""),city:geo.city||j.city||"IP"} }}catch{}
-  try{const r=await fetch("https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=&longitude=&localityLanguage=en");const j=await r.json(); if(j?.latitude){const city=j.city||j.locality||j.principalSubdivision||""; const country=j.countryName||""; return {lat:j.latitude,lon:j.longitude,tz:(-new Date().getTimezoneOffset()/60),place:city?`${city}, ${country}`:country,city:city||country||"IP"} }}catch{}
-  return FALLBACK;
+function obliq(T){ return 23.439291-0.0130042*T; }
+function sunLong(J){ const d=J-2451545; const M=norm(357.52911+0.98560028*d);
+  return norm(280.46646+0.98564736*d + 1.9146*Math.sin(M*D2R)+0.02*Math.sin(2*M*D2R)); }
+function moonLong(J){ const d=J-2451545;
+  const Lm=norm(218.3165+13.176358*d), D=norm(297.8501921+12.19074912*d), Ms=norm(357.5291092+0.98560028*d), Mm=norm(134.9633964+13.06499295*d);
+  return norm(Lm + 6.289*Math.sin(Mm*D2R) + 1.274*Math.sin((2*D-Mm)*D2R) + 0.658*Math.sin(2*D*D2R) - 0.186*Math.sin(Ms*D2R));
 }
-
-/* ================= Drik-style correction (keyless, lightweight) =================
-   ধারণা: সূর্য/চন্দ্রের mean longitude-এ ছোট Δλ যোগ/বিয়োগ — API ছাড়া।
-   এখানে একটি খুব লাইট হিউরিস্টিক correction দিলাম (≈ minute-level tune)।
-   ভবিষ্যতে চাইলে /data/corr.json থেকে finer table ফেচ করে বসানো যাবে — কিন্তু এখন দরকার নেই।
-*/
 function drikCorrectedLongitudes(J){
-  // seasonal tiny correction ~±0.8° for moon, ~±0.3° for sun (heuristic wave)
+  // lightweight correction (keyless) — improves moon & sun by small seasonal terms
   const d=J-2451545;
   const sun = sunLong(J) + 0.25*Math.sin((2*Math.PI/365.2425)*d);
   const moon = moonLong(J) + 0.8*Math.sin((2*Math.PI/27.55454988)*d);
   return {sun:norm(sun), moon:norm(moon)};
 }
-function tithiInfoDrik(J){
-  const L=drikCorrectedLongitudes(J); const diff=norm(L.moon-L.sun);
+function eclToEq(l,J){ const eps=obliq((J-2451545)/36525)*D2R, L=l*D2R;
+  return {ra:norm(Math.atan2(Math.sin(L)*Math.cos(eps),Math.cos(L))*R2D)/15, dec:Math.asin(Math.sin(eps)*Math.sin(L))*R2D}; }
+function lstDeg(J,lon,tz){ return (gmst(J)/15 + tz + lon/15)*15; }
+function altDeg(dec,ha,lat){ // degrees
+  return Math.asin(Math.sin(lat*D2R)*Math.sin(dec*D2R)+Math.cos(lat*D2R)*Math.cos(dec*D2R)*Math.cos(ha*D2R))*R2D;
+}
+
+/* ===== Rise/Set (Sun: fast; Moon: robust bisection) ===== */
+function solarRiseSet(J0,lat,lon,tz){
+  // use simple scan then linear refine with apparent solar disk (-0.833°)
+  const h0=-0.833; let rise=null,setv=null;
+  for(let k=-14;k<14;k++){
+    const a=(J0+(k-0.5-tz)/24), b=(J0+(k+0.5-tz)/24);
+    const La=eclToEq(sunLong(a),a), Lb=eclToEq(sunLong(b),b);
+    const Ha = ((lstDeg(a,lon,tz)/15 - La.ra)*15 + 540)%360 - 180;
+    const Hb = ((lstDeg(b,lon,tz)/15 - Lb.ra)*15 + 540)%360 - 180;
+    const Aa = altDeg(La.dec,Ha,lat) - h0, Ab = altDeg(Lb.dec,Hb,lat) - h0;
+    if(Aa<0 && Ab>0 && rise===null){ // rising
+      let lo=a, hi=b; for(let i=0;i<10;i++){ const mid=(lo+hi)/2;
+        const L=eclToEq(sunLong(mid),mid);
+        const H=((lstDeg(mid,lon,tz)/15 - L.ra)*15 + 540)%360 - 180;
+        const A=altDeg(L.dec,H,lat)-h0; if(A<0) lo=mid; else hi=mid; }
+      rise=(( ( ( (hi+lo)/2 ) - J0 )*24 ) + tz);
+    }
+    if(Aa>0 && Ab<0 && setv===null){ // setting
+      let lo=a, hi=b; for(let i=0;i<10;i++){ const mid=(lo+hi)/2;
+        const L=eclToEq(sunLong(mid),mid);
+        const H=((lstDeg(mid,lon,tz)/15 - L.ra)*15 + 540)%360 - 180;
+        const A=altDeg(L.dec,H,lat)-h0; if(A>0) lo=mid; else hi=mid; }
+      setv=(( ( ( (hi+lo)/2 ) - J0 )*24 ) + tz);
+    }
+  } return {rise,set:setv};
+}
+function lunarRiseSet(J0,lat,lon,tz){
+  // robust: scan 30-minute steps; refine with bisection; altitude threshold 0°
+  let rise=null,setv=null;
+  for(let k=-24;k<24;k++){
+    const a=J0+(k/48 - tz/24), b=J0+((k+1)/48 - tz/24);
+    const La=eclToEq(drikCorrectedLongitudes(a).moon,a);
+    const Lb=eclToEq(drikCorrectedLongitudes(b).moon,b);
+    const Ha=((lstDeg(a,lon,tz)/15 - La.ra)*15 + 540)%360 - 180;
+    const Hb=((lstDeg(b,lon,tz)/15 - Lb.ra)*15 + 540)%360 - 180;
+    const Aa=altDeg(La.dec,Ha,lat), Ab=altDeg(Lb.dec,Hb,lat);
+    if(Aa<0 && Ab>0 && rise===null){
+      let lo=a, hi=b; for(let i=0;i<12;i++){ const mid=(lo+hi)/2;
+        const L=eclToEq(drikCorrectedLongitudes(mid).moon,mid);
+        const H=((lstDeg(mid,lon,tz)/15 - L.ra)*15 + 540)%360 - 180;
+        const A=altDeg(L.dec,H,lat); if(A<0) lo=mid; else hi=mid; }
+      rise=((( (hi+lo)/2 )-J0)*24 + tz);
+    }
+    if(Aa>0 && Ab<0 && setv===null){
+      let lo=a, hi=b; for(let i=0;i<12;i++){ const mid=(lo+hi)/2;
+        const L=eclToEq(drikCorrectedLongitudes(mid).moon,mid);
+        const H=((lstDeg(mid,lon,tz)/15 - L.ra)*15 + 540)%360 - 180;
+        const A=altDeg(L.dec,H,lat); if(A>0) lo=mid; else hi=mid; }
+      setv=((( (hi+lo)/2 )-J0)*24 + tz);
+    }
+  } return {rise,set:setv};
+}
+
+/* ===== Tithi / Nakshatra ===== */
+function tithiName(n){
+  const a=["প্রতিপদ","দ্বিতীয়া","তৃতীয়া","চতুর্থী","পঞ্চমী","ষষ্ঠী","সপ্তমী","অষ্টমী","নবমী","দশমী","একাদশী","দ্বাদশী","ত্রয়োদশী","চতুর্দশী","পূর্ণিমা","প্রতিপদ","দ্বিতীয়া","তৃতীয়া","চতুর্থী","পঞ্চমী","ষষ্ঠী","সপ্তমী","অষ্টমী","নবমী","দশমী","একাদশী","দ্বাদশী","ত্রয়োদশী","চতুর্দশী","অমাবস্যা"];
+  return a[(n-1)%30];
+}
+const NAK=["অশ্বিনী","ভরণী","কৃত্তিকা","রোহিণী","মৃগশিরা","আদ্রা","পুনর্বসূ","পুষ্যা","আশ্লেষা","মঘা","পূর্বফাল্গুনী","উত্তরফাল্গুনী","হস্তা","চিত্রা","স্বাতী","বিশাখা","অনুরাধা","জ্যেষ্ঠা","মূলা","পূর্বাষাঢ়া","উত্তরাষাঢ়া","শ্রবণা","ধনিষ্ঠা","শতভিষা","পূর্বভাদ্রপদ","উত্তরভাদ্রপদ","রেবতী"];
+const LORD={"অশ্বিনী":"কেতু (Ketu)","ভরণী":"শুক্র (Venus)","কৃত্তিকা":"সূর্য (Sun)","রোহিণী":"চন্দ্র (Moon)","মৃগশিরা":"মঙ্গল (Mars)","আদ্রা":"রাহু (Rahu)","পুনর্বসূ":"বৃহস্পতি (Jupiter)","পুষ্যা":"শনি (Saturn)","আশ্লেষা":"বুধ (Mercury)","মঘা":"কেতু (Ketu)","পূর্বফাল্গুনী":"শুক্র (Venus)","উত্তরফাল্গুনী":"সূর্য (Sun)","হস্তা":"চন্দ্র (Moon)","চিত্রা":"মঙ্গল (Mars)","স্বাতী":"রাহু (Rahu)","বিশাখা":"বৃহস্পতি (Jupiter)","অনুরাধা":"শনি (Saturn)","জ্যেষ্ঠা":"বুধ (Mercury)","মূলা":"কেতু (Ketu)","পূর্বাষাঢ়া":"শুক্র (Venus)","উত্তরাষাঢ়া":"সূর্য (Sun)","শ্রবণা":"চন্দ্র (Moon)","ধনিষ্ঠা":"মঙ্গল (Mars)","শতভিষা":"রাহু (Rahu)","পূর্বভাদ্রপদ":"বৃহস্পতি","উত্তরভাদ্রপদ":"শনি","রেবতী":"বুধ"};
+
+function longitudesAt(J, engine="surya"){
+  if(engine==="drik"){ const L=drikCorrectedLongitudes(J); return {ls:L.sun, lm:L.moon}; }
+  return {ls:sunLong(J), lm:moonLong(J)};
+}
+function tithiInfo(J, engine){
+  const {ls,lm}=longitudesAt(J,engine); const diff=norm(lm-ls);
   const num=Math.floor(diff/12)+1; const rem=(diff%12)/12;
   const paksha=(num<=15)?"শুক্লপক্ষ":"কৃষ্ণপক্ষ"; return {num,rem,paksha};
 }
-function nakInfoDrik(J){
-  const L=drikCorrectedLongitudes(J).moon; const step=(13+20/60); const idx=Math.floor(L/step); const frac=(L%step)/step;
+function nakInfo(J, engine){
+  const Lm=(engine==="drik"?drikCorrectedLongitudes(J).moon:moonLong(J));
+  const step=(13+20/60); const idx=Math.floor(Lm/step); const frac=(Lm%step)/step;
   return {idx,frac,name:NAK[idx]};
 }
 
-/* ================= Tide (approx) ================= */
-function tideApprox(lon){ const high1=(5 + (lon/15))%24, high2=(high1 + 12.42)%24, low1=(high1 + 6.21)%24, low2=(high2 + 6.21)%24; return {high1,high2,low1,low2}; }
+/* ===== Bangabda (sunrise-based; simple Lahiri) ===== */
+function lahiriAyanamsa(J){ return 24.0; }
+const B_MONTHS=["বৈশাখ","জ্যৈষ্ঠ","আষাঢ়","শ্রাবণ","ভাদ্র","আশ্বিন","কার্তিক","অগ্রহায়ণ","পৌষ","মাঘ","ফাল্গুন","চৈত্র"];
+function bangabdaFromSun(J, localDate){
+  const ay=lahiriAyanamsa(J); const lon=norm(sunLong(J)-ay); const sign=Math.floor(lon/30); const dayInMonth=Math.floor(lon%30)+1;
+  const poila=new Date(localDate.getFullYear(),3,14);
+  const byear=(localDate>=poila)?(localDate.getFullYear()-593):(localDate.getFullYear()-594);
+  return {month:B_MONTHS[sign], day:dayInMonth, year:byear};
+}
 
-/* ================= Render ================= */
-const root=()=>document.getElementById("root");
+/* ===== Location (GPS → IP → BDC → fallback) ===== */
+const FALLBACK={lat:22.5726,lon:88.3639,tz:(-new Date().getTimezoneOffset()/60),place:"Kolkata, India",city:"Kolkata"};
+async function reverseNom(lat,lon){try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=10`);const j=await r.json();if(j?.address){const a=j.address;const city=a.city||a.town||a.village||a.county||a.state||"";const country=a.country||"";return {place:city?`${city}, ${country}`:country,city:city||country||"Unknown"} }}catch{} return {place:"",city:""}}
+async function reverseBDC(lat,lon){try{const r=await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);const j=await r.json();if(j){const city=j.city||j.locality||j.principalSubdivision||"";const country=j.countryName||"";return {place:city?`${city}, ${country}`:country,city:city||country||"Unknown"} }}catch{} return {place:"",city:""}}
+async function getLocation(){
+  if(navigator.geolocation){
+    const got=await new Promise(res=>{navigator.geolocation.getCurrentPosition(async p=>{
+      const lat=p.coords.latitude,lon=p.coords.longitude; let geo=await reverseNom(lat,lon); if(!geo.place) geo=await reverseBDC(lat,lon);
+      res({lat,lon,tz:(-new Date().getTimezoneOffset()/60),place:geo.place||"GPS",city:geo.city||"GPS"});
+    },()=>res(null),{timeout:6000})});
+    if(got) return got;
+  }
+  try{const r=await fetch("https://ipapi.co/json/");const j=await r.json(); if(j?.latitude){let geo=await reverseNom(j.latitude,j.longitude); if(!geo.place) geo=await reverseBDC(j.latitude,j.longitude);
+    return {lat:j.latitude,lon:j.longitude,tz:(-new Date().getTimezoneOffset()/60),place:geo.place||(j.city?`${j.city}, ${j.country_name}`:""),city:geo.city||j.city||"IP"} }}catch{}
+  try{const r=await fetch("https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=&longitude=&localityLanguage=en");const j=await r.json(); if(j?.latitude){const city=j.city||j.locality||j.principalSubdivision||""; const country=j.countryName||""; return {lat:j.latitude,lon:j.longitude,tz:(-new Date().getTimezoneOffset()/60),place:city?`${city}, ${country}`:country,city:city||country||"IP"} }}catch{}
+  return FALLBACK;
+}
 
+/* ===== Tide approx ===== */
+function tideApprox(lon){ const h1=(5 + (lon/15))%24, h2=(h1+12.42)%24, l1=(h1+6.21)%24, l2=(h2+6.21)%24; return {h1,h2,l1,l2}; }
+
+/* ===== Render ===== */
 (async function init(){
-  const loc=await getLocation();
-  const {lat,lon,tz,place,city}=loc;
+  const loc=await getLocation(); const {lat,lon,tz,place,city}=loc;
 
   const now=new Date();
-  const ist=new Date(now.toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));
-  const Y=ist.getFullYear(),M=ist.getMonth()+1,D=ist.getDate();
+  const local=new Date(now.toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));
+  const Y=local.getFullYear(), M=local.getMonth()+1, D=local.getDate();
 
-  // JD & sunrise-based day
   const J0=JD(Y,M,D,0);
-  const rs0=riseSet("sun",J0,lat,lon,tz);
-  const localHr=now.getHours()+now.getMinutes()/60;
-  const srHrLocal=rs0.rise!=null?(rs0.rise+12+tz):6;
-  const Jp=(localHr<srHrLocal)?(J0-1):J0;
 
-  // evaluate a little after sunrise for "day-valid"
-  const evalHr = srHrLocal + 0.5;
-  const JEval = Jp + (evalHr - tz)/24;
+  // --- Sunrise-based day (from solar rise) ---
+  const sRS = solarRiseSet(J0,lat,lon,tz);
+  const localHr = now.getHours()+now.getMinutes()/60;
+  const srHrLocal = (sRS.rise!=null) ? (sRS.rise) : 6; // local hours
+  const Jday = (localHr < srHrLocal) ? (J0-1) : J0;
 
-  // choose engine
-  const t = (MODE==="drik") ? tithiInfoDrik(JEval) : tithiInfo(JEval);
-  const n = (MODE==="drik") ? nakInfoDrik(JEval)   : nakInfo(JEval);
+  // Evaluate 30 min after sunrise for day-valid tithi/nakshatra
+  const JEval = Jday + ((srHrLocal + 0.5) - tz)/24;
 
+  // Drik/Surya engines
+  const engine = (MODE==="drik") ? "drik" : "surya";
+  const t = tithiInfo(JEval, engine);
+  const n = nakInfo(JEval, engine);
+
+  // End-times (rough but robust)
   const tNext = tithiName((t.num%30)+1);
   const nNext = NAK[(n.idx+1)%27];
+  const tEnd = fmt12(localHr + (12*(1 - t.rem))/(13.176358 - 0.98564736)*24);
+  const nEnd = fmt12(localHr + ((13 + 20/60)*(1 - n.frac))/13.176358*24);
 
-  const tEnd=fmt12(localHr + (12*(1 - t.rem))/(13.176358 - 0.98564736)*24);
-  const nEnd=fmt12(localHr + ((13 + 20/60) * (1 - n.frac)) / 13.176358 * 24);
+  // Rise/Set for the *panchika day*
+  const sEvents = solarRiseSet(Jday,lat,lon,tz);
+  const mEvents = lunarRiseSet(Jday,lat,lon,tz);
 
-  // events (same for both)
-  const rsS=riseSet("sun",Jp,lat,lon,tz), rsM=riseSet("moon",Jp,lat,lon,tz);
-  const sr=fmt12(rsS.rise+12+tz), ss=fmt12(rsS.set+12+tz);
-  const mr=(rsM.rise!=null)?fmt12(rsM.rise+12+tz):"—", ms=(rsM.set!=null)?fmt12(rsM.set+12+tz):"—";
+  const sr = (sEvents.rise!=null)?fmt12(sEvents.rise):"—";
+  const ss = (sEvents.set !=null)?fmt12(sEvents.set ):"—";
+  const mr = (mEvents.rise!=null)?fmt12(mEvents.rise):"—";
+  const ms = (mEvents.set !=null)?fmt12(mEvents.set ):"—";
 
-  // Bangabda (sunrise-based display)
-  const bang=bangabdaFromSun(JEval, ist);
+  // Bangabda from sunrise
+  const bang = bangabdaFromSun(JEval, local);
+  const tide = tideApprox(lon);
 
-  // tide
-  const td=tideApprox(lon);
+  const modeLabel = (MODE==="drik")? "ক্যালেন্ডার: দৃক (Govt-style)" : "ক্যালেন্ডার: সূর্যসিদ্ধান্ত (Calc)";
 
-  const label = (MODE==="drik")? "ক্যালেন্ডার: দৃক (Govt-style)" : "ক্যালেন্ডার: সূর্যসিদ্ধান্ত (Calc)";
-
-  root().innerHTML=`
+  document.getElementById("root").innerHTML = `
   <section class="card">
     <div class="title">
       <span>🪔 পঞ্জিকা</span>
-      <span class="toggle" id="tg">${label} <small>⇄</small></span>
+      <span class="toggle" id="tg">${modeLabel} ⇄</span>
     </div>
     <div class="line">আজ: ${bang.day} ${bang.month} ${bang.year} বঙ্গাব্দ</div>
     <div class="line bold">📍 ${place||city}</div>
@@ -184,14 +256,14 @@ const root=()=>document.getElementById("root");
       <span class="paksha">${t.paksha}</span>
       <div class="label">তিথি</div>
       <div class="value">${tithiName(t.num)}</div>
-      <div class="sub"><b>শেষ:</b> ${tEnd} &nbsp;•&nbsp; <b>পরবর্তী:</b> <span class="nextTag nextTithi">${tNext}</span></div>
+      <div class="sub"><b>শেষ:</b> ${tEnd} · <b>পরবর্তী:</b> <span style="color:#e65100;font-weight:900">${tNext}</span></div>
     </div>
 
     <div class="pill">
       <div class="label">নক্ষত্র</div>
       <div class="value">${n.name}</div>
       <div class="sub" style="color:var(--ink);font-weight:800">অধিপতি গ্রহ: ${LORD[n.name]||"—"}</div>
-      <div class="sub"><b>শেষ:</b> ${nEnd} &nbsp;•&nbsp; <b>পরবর্তী:</b> <span class="nextTag nextNak">${nNext}</span></div>
+      <div class="sub"><b>শেষ:</b> ${nEnd} · <b>পরবর্তী:</b> <span style="color:#1565c0;font-weight:900">${nNext}</span></div>
     </div>
 
     <div class="timeCol">
@@ -208,19 +280,19 @@ const root=()=>document.getElementById("root");
   <section class="tide">
     <div class="thead">🌊 আজকের জোয়ার-ভাটা (লোকেশনভিত্তিক, আনুমানিক)</div>
     <div class="tCol">
-      <div class="tc"><div class="tLab">উচ্চ জোয়ার ১</div><div class="tVal">${fmt12(td.high1)}</div></div>
-      <div class="tc"><div class="tLab">উচ্চ জোয়ার ২</div><div class="tVal">${fmt12(td.high2)}</div></div>
-      <div class="tc"><div class="tLab">নিম্ন ভাটা ১</div><div class="tVal">${fmt12(td.low1)}</div></div>
-      <div class="tc"><div class="tLab">নিম্ন ভাটা ২</div><div class="tVal">${fmt12(td.low2)}</div></div>
+      <div class="tc"><div class="tLab">উচ্চ জোয়ার ১</div><div class="tVal">${fmt12(tide.h1)}</div></div>
+      <div class="tc"><div class="tLab">উচ্চ জোয়ার ২</div><div class="tVal">${fmt12(tide.h2)}</div></div>
+      <div class="tc"><div class="tLab">নিম্ন ভাটা ১</div><div class="tVal">${fmt12(tide.l1)}</div></div>
+      <div class="tc"><div class="tLab">নিম্ন ভাটা ২</div><div class="tVal">${fmt12(tide.l2)}</div></div>
     </div>
   </section>
   `;
 
-  // local time
+  // live local time (zone shown)
   const tzFmt=new Intl.DateTimeFormat('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true,timeZoneName:'short'});
-  document.getElementById('lt').textContent="⏰ Local Time — " + tzFmt.format(ist);
+  document.getElementById('lt').textContent="⏰ Local Time — "+tzFmt.format(local);
 
-  // toggle handler
+  // toggle
   document.getElementById('tg').onclick=()=>{ setMode(MODE==="drik"?"surya":"drik"); location.reload(); };
 })();
 </script>
