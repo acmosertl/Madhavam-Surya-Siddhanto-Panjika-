@@ -501,8 +501,12 @@
 
     // live clock updater
     const lc = document.getElementById('localClock');
-    setInterval(()=>{ const d=new Date(); lc.textContent = "⏰ Local Time — " + d.toLocaleTimeString(); }, 1000);
+setInterval(()=>{
+    const d = new Date();
+    lc.textContent = "⏰ Local Time — " + d.toLocaleTimeString('en-US', { hour12: true });
+}, 1000);
 
+    
     // TOGGLE interactions
     const rail = document.getElementById('toggleRail');
     const knob = document.getElementById('toggleKnob');
